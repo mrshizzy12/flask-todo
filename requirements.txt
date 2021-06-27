@@ -1,0 +1,6 @@
+Flask==2.0.1
+Flask-Migrate==3.0.0
+Flask-SQLAlchemy==2.5.1
+Flask-WTF==0.14.3
+html5lib==1.0.1
+Bootstrap-Flask==1.5.1

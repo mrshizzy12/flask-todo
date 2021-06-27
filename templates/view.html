@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+
+{% block title %} View List {% endblock %}
+
+
+{% block content %}
+    <ol>
+        {% for td in todo.todolists %}
+            <li><a href="{{ url_for('index', id=td.id) }}">{{ td.name }}</a></li>
+        {% endfor %}
+    </ol>  
+{% endblock %}
