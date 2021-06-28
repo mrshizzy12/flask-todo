@@ -159,7 +159,7 @@ def create():
     return render_template('create.html', form=form)
 
 
-
+@app.get('/')
 @app.get('/view/')
 @login_required
 def view():
