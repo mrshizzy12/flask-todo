@@ -47,7 +47,7 @@
     <div class="sidenav">
         {% if session.get('logged-in') %}
             {{ render_nav_item('create', 'Create') }}
-            {{ render_nav_item('view', 'View') }}
+            {{ render_nav_item('todos', 'View Todos') }}
             <br>
             <br>
             {{ render_nav_item('logout', 'Logout') }}
@@ -59,12 +59,11 @@
     <div id="content", name="content", class="main">
         <div class="row justify-content-center">
                 <br>
-                {{ render_messages(container=True, dismissible=True) }}        
+                {{ render_messages(container=True, dismissible=True) }}
             <div class="ol-8">
-                <h1 class="mt-2">My site</h1>
+                <h1 class="mt-2">My Todo-List</h1>
                 <hr class="mt-0 mb-4">
-                {% block content %}
-                {% endblock %}     
+                {% block content %} {% endblock %}     
             </div>
         </div>
     </div>

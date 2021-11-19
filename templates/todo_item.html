@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+
+{% block title %} Todo-items {% endblock %}
+
+
+{% block content %}
+    <h2>{{ todo.name }}</h1>
+    <form method="POST" action="{{ url_for('todo_item', id=todo.id) }}">
+        {% for item in todo.items.all() %}
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <div class="input-group-text">
+                    {% if item.complete == True %}
+                        <input type="checkbox" value="clicked" name="c{{item.id}}" checked>
+                    {% else %}
+                        <input type="checkbox" value="clicked" name="c{{item.id}}">
+                    {% endif %}
+                </div>
+            </div>
+            <input type="text" name="itemText{{item.id}}" value="{{item.text}}" class="form-control">
+        </div>
+        {% endfor %}
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <button type="submit" name="newItem"  value="newItem" class="btn btn-success">Add New Item</button>
+            </div>
+            <input type="text" name="new">
+        </div>
+        <button type="submit" name="save"  value="save" class="btn btn-success">Save Edit</button>       
+    </form>
+{% endblock %}

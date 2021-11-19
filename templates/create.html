@@ -5,12 +5,12 @@
 
 
 {% block content %}
-    <h3>Create Todo List</h3>
+    <h3>Create New Todo</h3>
     <form method="POST", action="{{ url_for('create') }}" class="form-group">
         {{ form.csrf_token }}
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <button type="submit", name="save" class="btn btn-success">Create New</button>
+                <button type="submit", name="save" class="btn btn-success">Add Todo</button>
             </div>
             {{ form.name() }}
         </div>        

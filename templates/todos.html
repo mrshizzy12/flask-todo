@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+
+{% block title %} Todos {% endblock %}
+
+
+{% block content %}
+    <ol>
+        {% for td in todo.todolists %}
+            <li><a href="{{ url_for('todo_item', id=td.id) }}">{{ td.name }}</a></li>
+        {% endfor %}
+    </ol>  
+{% endblock %}

@@ -1,19 +1,18 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, g, session
+from flask import Flask, render_template, redirect, url_for, flash, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 import secrets
 import os
 from flask_bootstrap import Bootstrap
 from flask_migrate import Migrate
-from wtforms.fields import StringField, BooleanField, PasswordField
-from wtforms.fields.simple import SubmitField
+from wtforms.fields import StringField, BooleanField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, EqualTo, ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 from decorator import login_required
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-''' create flask application instance '''
+#create flask application instance
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "db.sqlite3")}'
@@ -21,24 +20,23 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['BOOTSTRAP_SERVE_LOCAL'] = True
 app.config['BOOTSTRAP_BTN_STYLE'] = 'success'
 app.config['BOOTSTRAP_BTN_SIZE'] = 'md'
-app.config['BOOTSTRAP_SERVE_LOCAL'] = True
 
 
-''' flask extensions '''
+#Flask extensions
 db = SQLAlchemy(app)
 bootstrap = Bootstrap(app)
 migrate = Migrate(app, db, render_as_batch=True)
 
 
 
-''' Database model class '''
+#Database models
 class User(db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(20), unique=True, index=True, nullable=False)
     _password = db.Column(db.String(30), nullable=False)
-    todolists = db.relationship('TodoList', backref='user', lazy='dynamic', cascade='all, delete')
+    todolists = db.relationship('TodoList', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     
     @property
     def password(self):
@@ -61,11 +59,12 @@ class TodoList(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(200))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    items = db.relationship('Item', backref='todos', lazy='dynamic', cascade='all, delete')
+    items = db.relationship('Item', backref='todos', lazy='dynamic', cascade='all, delete-orphan')
     
     
     def __repr__(self) -> str:
         return f'{self.name}'
+    
 
 class Item(db.Model):
     __tablename__ ='items'
@@ -78,7 +77,7 @@ class Item(db.Model):
         return f'{self.text}'
     
  
-''' flask wtf class '''   
+#Flask wtf class   
 class CreateTodoForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=1, max=200)])
     complete = BooleanField(validators=[Optional()])
@@ -100,7 +99,7 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-''' custom errorhandlers '''    
+#custom errorhandlers     
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404 
@@ -111,10 +110,19 @@ def page_not_found(e):
     return render_template('500.html'), 500
  
  
-
-@app.route('/index/<int:id>', methods=["GET", 'POST'])
+ 
+@app.get('/')
+@app.get('/todos/')
 @login_required
-def index(id):
+def todos():
+    user = session.get('user')
+    todo = User.query.get(user)
+    return render_template('todos.html', todo=todo)
+
+
+@app.route('/todo/item/<int:id>', methods=["GET", 'POST'])
+@login_required
+def todo_item(id):
     uid = session.get('user')
     user = User.query.get(uid)
     todo = user.todolists.filter_by(id=id).first_or_404()
@@ -125,9 +133,10 @@ def index(id):
                     item.complete = True
                 else:
                     item.complete = False
+                item.text = request.form.get('itemText' + str(item.id))
                 db.session.commit()
             flash('item(s) updated', 'info')
-            return redirect(url_for('index', id=todo.id))
+            return redirect(url_for('todo_item', id=todo.id))
         elif request.form.get('newItem'):
             txt = request.form.get('new')
             
@@ -137,12 +146,12 @@ def index(id):
                 todo.items.append(item)
                 db.session.commit()
                 flash('new item added to the list', 'success')
-                return redirect(url_for('index', id=todo.id))
+                return redirect(url_for('todo_item', id=todo.id))
             else:
                 db.session.rollback()
                 flash('error adding new item, please try again', 'danger')
-                return redirect(url_for('index', id=todo.id))
-    return render_template('index.html', todo=todo)
+                return redirect(url_for('todo_item', id=todo.id))
+    return render_template('todo_item.html', todo=todo)
 
 
 
@@ -155,24 +164,16 @@ def create():
         db.session.add(t)
         db.session.commit()
         flash('New Todo was created', 'success')
-        return redirect(url_for('view'))
+        return redirect(url_for('todos'))
     return render_template('create.html', form=form)
 
-
-@app.get('/')
-@app.get('/view/')
-@login_required
-def view():
-    user = session.get('user')
-    todo = User.query.get(user)
-    return render_template('view.html', todo=todo)
 
 
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if session.get('logged-in'):
-        return redirect(url_for('view'))
+        return redirect(url_for('todos'))
     
     form = RegisterForm()
     if form.validate_on_submit():
@@ -188,7 +189,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('logged-in'):
-        return redirect(url_for('view'))
+        return redirect(url_for('todos'))
     
     form = LoginForm()
     if form.validate_on_submit():
@@ -197,14 +198,16 @@ def login():
             session['user'] = user.id
             session['logged-in'] = True
             flash(f'welcome {user.username}', 'success')
-            return redirect(url_for('view'))
+            return redirect(url_for('todos'))
+        else:
+            flash('username or password incorrect.', 'warning')
+            return redirect(request.url)
     return render_template('login.html', form=form)
 
 
 @app.get('/logout')
 def logout():
-    session.pop('user')
-    session.pop('logged-in')
+    session.clear()
     return redirect(url_for('login'))
 
 
