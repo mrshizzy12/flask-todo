@@ -67,5 +67,4 @@ flask-todo is a minimalistic application developed for beginners to teach them t
     (env) $ flask run
     ```
 
-5. Access the application on your web browser at `http://localhost:5000`. Register a new account, log in, create
-a new todo list and add items to it.
+5. Access the application on your web browser at `http://localhost:5000`. Register a new account, log in, create a new todo list and add items to it.
